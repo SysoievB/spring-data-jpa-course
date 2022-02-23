@@ -109,6 +109,6 @@ Always use import javax.persistence.*; not hibernate imports.
 
 @Entity - mapping class to DB, should have @Id necessarily.Minimum what we need in order to map class to DB.
 
-@Table - 
+@Table - mapping class to certain table in DB.
 
-@Column - 
+@Column - mapping field to column in table.
