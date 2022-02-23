@@ -100,3 +100,15 @@ insert into hibernate_sequence values ( 1 );
 alter table account_settings add constraint FK54uo82jnot7ye32pyc8dcj2eh foreign key
     (account_id) references accounts (id);
 ```
+### Getting Started with Spring Data JPA
+
+```properties
+spring.jpa.hibernate.ddl-auto=update//updates all tables in DB
+```
+Always use import javax.persistence.*; not hibernate imports.
+
+@Entity - mapping class to DB, should have @Id necessarily.Minimum what we need in order to map class to DB.
+
+@Table - 
+
+@Column - 
