@@ -107,8 +107,13 @@ spring.jpa.hibernate.ddl-auto=update//updates all tables in DB
 ```
 Always use import javax.persistence.*; not hibernate imports.
 
-@Entity - mapping class to DB, should have @Id necessarily.Minimum what we need in order to map class to DB.
+@Entity(name = "Student") - mapping class to DB, should have @Id necessarily.Minimum what we need in order to map class to DB.
+The name attribute will use in JPQL queries.
 
 @Table - mapping class to certain table in DB.
 
 @Column - mapping field to column in table.
+
+### Querying Data
+
+@Query - allows to write JPQL queries as well as native queries.
