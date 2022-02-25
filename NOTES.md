@@ -117,3 +117,4 @@ The name attribute will use in JPQL queries.
 ### Querying Data
 
 @Query - allows to write JPQL queries as well as native queries.
+
