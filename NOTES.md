@@ -287,7 +287,7 @@ Page<User> findAllUsersWithPagination(Pageable pageable);
 
 1. **Modeling With a Foreign Key**
 
-![This is an image](C:\Users\Bogdan\IdeaProjects\spring-data-jpa-course\src\main\resources\images\1_1.webp)
+![This is an image](https://www.baeldung.com/wp-content/uploads/2018/12/1-1_FK.png)
 
 In this example, the address_id column in users is the foreign key to address.
 
@@ -332,7 +332,7 @@ public class Address {
 In this strategy, instead of creating a new column address_id, we'll mark the primary key column (user_id) of the address table as the foreign key to the users table:
 
 
-![This is an image](C:\Users\Bogdan\IdeaProjects\spring-data-jpa-course\src\main\resources\images\1_2.webp)
+![This is an image](https://www.baeldung.com/wp-content/uploads/2018/12/1-1-SK.png)
 
 An ER diagram with Users Tied to Addresses where they share the same primary key values
 We've optimized the storage space by utilizing the fact that these entities have a one-to-one relationship between them.
@@ -384,7 +384,7 @@ The strategies that we have discussed until now force us to put null values in t
 
 Typically, we think of many-to-many relationships when we consider a join table, but using a join table in this case can help us to eliminate these null values:
 
-![This is an image](C:\Users\Bogdan\IdeaProjects\spring-data-jpa-course\src\main\resources\images\1_3.webp)
+![This is an image](https://www.baeldung.com/wp-content/uploads/2018/12/1-1-JT.png)
 
 ```java
 @Entity
