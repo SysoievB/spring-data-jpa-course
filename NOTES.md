@@ -285,3 +285,162 @@ Page<User> findAllUsersWithPagination(Pageable pageable);
 
 ### One to One Relationships
 
+1. **Modeling With a Foreign Key**
+
+![This is an image](C:\Users\Bogdan\IdeaProjects\spring-data-jpa-course\src\main\resources\images\1_1.webp)
+
+In this example, the address_id column in users is the foreign key to address.
+
+```java
+@Entity
+@Table(name = "users")
+public class User {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
+    private Long id;
+    //... 
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    private Address address;
+
+    // ... getters and setters
+}
+
+@Entity
+@Table(name = "address")
+public class Address {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column(name = "id")
+  private Long id;
+  //...
+
+  @OneToOne(mappedBy = "address")
+  private User user;
+
+  //... getters and setters
+}
+```
+
+2. **Modeling With a Shared Primary Key** 
+
+
+In this strategy, instead of creating a new column address_id, we'll mark the primary key column (user_id) of the address table as the foreign key to the users table:
+
+
+![This is an image](C:\Users\Bogdan\IdeaProjects\spring-data-jpa-course\src\main\resources\images\1_2.webp)
+
+An ER diagram with Users Tied to Addresses where they share the same primary key values
+We've optimized the storage space by utilizing the fact that these entities have a one-to-one relationship between them.
+
+```java
+@Entity
+@Table(name = "users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
+    private Long id;
+
+    //...
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private Address address;
+
+    //... getters and setters
+}
+@Entity
+@Table(name = "address")
+public class Address {
+
+    @Id
+    @Column(name = "user_id")
+    private Long id;
+
+    //...
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
+   
+    //... getters and setters
+}
+```
+
+The mappedBy attribute is now moved to the User class since the foreign key is now present in the address table. We've also added the @PrimaryKeyJoinColumn annotation, which indicates that the primary key of the User entity is used as the foreign key value for the associated Address entity.
+
+We still have to define an @Id field in the Address class. But note that this references the user_id column, and it no longer uses the @GeneratedValue annotation. Also, on the field that references the User, we've added the @MapsId annotation, which indicates that the primary key values will be copied from the User entity.
+
+3. ** Modeling With a Join Table**
+
+The strategies that we have discussed until now force us to put null values in the column to handle optional relationships.
+
+Typically, we think of many-to-many relationships when we consider a join table, but using a join table in this case can help us to eliminate these null values:
+
+![This is an image](C:\Users\Bogdan\IdeaProjects\spring-data-jpa-course\src\main\resources\images\1_3.webp)
+
+```java
+@Entity
+@Table(name = "employee")
+public class Employee {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
+    private Long id;
+
+    //...
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinTable(name = "emp_workstation", 
+      joinColumns = 
+        { @JoinColumn(name = "employee_id", referencedColumnName = "id") },
+      inverseJoinColumns = 
+        { @JoinColumn(name = "workstation_id", referencedColumnName = "id") })
+    private WorkStation workStation;
+
+    //... getters and setters
+}
+@Entity
+@Table(name = "workstation")
+public class WorkStation {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
+    private Long id;
+
+    //...
+
+    @OneToOne(mappedBy = "workStation")
+    private Employee employee;
+
+    //... getters and setters
+}
+```
+
+@JoinTable instructs Hibernate to employ the join table strategy while maintaining the relationship.
+
+Also, Employee is the owner of this relationship, as we chose to use the join table annotation on it.
+
+#### Difference between FetchType LAZY and EAGER in Java Persistence API not for OneToOne
+
+```java
+LAZY//fetch when needed
+EAGER//fetch immediately
+```
+
+#### Cascade Type
+
+- CascadeType.PERSIST  – It means if the parent entity is saved then the related entity will also be saved.
+- CascadeType.MERGE  – It means if the parent entity is merged then the related entity will also be merged.
+- CascadeType.REMOVE  – It means if the parent entity is deleted then the related entity will also be deleted.
+- CascadeType.DETACH  – It means if the parent entity is detached then the related entity will also be detached.
+- CascadeType.REFRESH  – It means if the parent entity is refreshed then the related entity will also be refreshed.
+- CascadeType.ALL  – It is equivalent to cascade={DETACH, MERGE, PERSIST, REFRESH, REMOVE}.
