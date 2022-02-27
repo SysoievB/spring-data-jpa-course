@@ -378,7 +378,7 @@ The mappedBy attribute is now moved to the User class since the foreign key is n
 
 We still have to define an @Id field in the Address class. But note that this references the user_id column, and it no longer uses the @GeneratedValue annotation. Also, on the field that references the User, we've added the @MapsId annotation, which indicates that the primary key values will be copied from the User entity.
 
-3. ** Modeling With a Join Table**
+3. **Modeling With a Join Table**
 
 The strategies that we have discussed until now force us to put null values in the column to handle optional relationships.
 
@@ -444,3 +444,180 @@ EAGER//fetch immediately
 - CascadeType.DETACH  – It means if the parent entity is detached then the related entity will also be detached.
 - CascadeType.REFRESH  – It means if the parent entity is refreshed then the related entity will also be refreshed.
 - CascadeType.ALL  – It is equivalent to cascade={DETACH, MERGE, PERSIST, REFRESH, REMOVE}.
+
+#### Orphan removal & Cascading Remove
+
+Marking a reference field with CascadeType.REMOVE (or CascadeType.ALL, which includes REMOVE) indicates that remove operations should be cascaded automatically to entity objects that are referenced by that field (multiple entity objects can be referenced by a collection field):
+
+```java
+@Entity
+class Employee {
+
+@OneToOne(cascade=CascadeType.REMOVE)
+private Address address;
+
+}
+```
+In the example above, the Employee entity class contains an address field that references an instance of Address, which is another entity class. Due to the CascadeType.REMOVE setting, when an Employee instance is removed the operation is automatically cascaded to the referenced Address instance, which is then automatically removed as well. Cascading may continue recursively when applicable (e.g. to entity objects that the Address object references, if any).
+
+JPA 2 supports an additional and more aggressive remove cascading mode which can be specified using the orphanRemoval element of the @OneToOne and @OneToMany annotations:
+
+```java
+@Entity
+class Employee {
+     
+    @OneToOne(orphanRemoval=true)
+    private Address address;
+     
+}
+```
+
+When an Employee entity object is removed the remove operation is cascaded to the referenced Address entity object. In this regard, orphanRemoval=true and cascade=CascadeType.REMOVE are identical, and if orphanRemoval=true is specified, CascadeType.REMOVE is redundant.
+
+The difference between the two settings is in the response to disconnecting a relationship. For example, such as when setting the address field to null or to another Address object.
+
+- If orphanRemoval=true is specified the disconnected Address instance is automatically removed. This is useful for cleaning up dependent objects (e.g. Address) that should not exist without a reference from an owner object (e.g. Employee).
+- If only cascade=CascadeType.REMOVE is specified no automatic action is taken since disconnecting a relationship is not a remove operation.
+
+#### @ForeignKey
+
+```java
+import javax.persistence.*;
+import java.time.LocalDateTime;
+
+import static javax.persistence.GenerationType.SEQUENCE;
+
+@Entity(name = "Book")
+@Table(name = "book")
+public class Book {
+
+    @Id
+    @SequenceGenerator(
+            name = "book_sequence",
+            sequenceName = "book_sequence",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = SEQUENCE,
+            generator = "book_sequence"
+    )
+    @Column(
+            name = "id",
+            updatable = false
+    )
+    private Long id;
+
+    @Column(
+            name = "created_at",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITHOUT TIME ZONE"
+    )
+    private LocalDateTime createdAt;
+
+    @Column(
+            name = "book_name",
+            nullable = false
+    )
+    private String bookName;
+
+    @ManyToOne
+    @JoinColumn(
+            name = "student_id",
+            nullable = false,
+            referencedColumnName = "id",
+            foreignKey = @ForeignKey(
+                    name = "student_book_fk"
+            )
+    )
+    private Student student;
+
+    public Book() {
+    }
+
+    public Book(LocalDateTime createdAt, String bookName, Student student) {
+        this.createdAt = createdAt;
+        this.bookName = bookName;
+        this.student = student;
+    }
+
+}
+
+
+@Entity(name = "Student")
+@Table(
+        name = "student",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "student_email_unique", columnNames = "email")
+        }
+)
+public class Student {
+
+    @Id
+    @SequenceGenerator(
+            name = "student_sequence",
+            sequenceName = "student_sequence",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = SEQUENCE,
+            generator = "student_sequence"
+    )
+    @Column(
+            name = "id"
+    )
+    private Long id;
+
+    @Column(
+            name = "first_name",
+            nullable = false,
+            columnDefinition = "TEXT"
+    )
+    private String firstName;
+
+    @Column(
+            name = "last_name",
+            nullable = false,
+            columnDefinition = "TEXT"
+    )
+    private String lastName;
+
+    @Column(
+            name = "email",
+            nullable = false,
+            columnDefinition = "TEXT"
+    )
+    private String email;
+
+    @Column(
+            name = "age",
+            nullable = false
+
+    )
+    private Integer age;
+
+    @OneToOne(
+            mappedBy = "student",
+            orphanRemoval = true
+    )
+    private StudentIdCard studentIdCard;
+
+    @OneToMany(
+            mappedBy = "student",
+            orphanRemoval = true,
+            cascade = CascadeType.ALL
+    )
+    private final List<Book> books = new ArrayList<>();
+
+    public Student(String firstName,
+                   String lastName,
+                   String email,
+                   Integer age) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.age = age;
+    }
+
+    public Student() {
+}
+```
