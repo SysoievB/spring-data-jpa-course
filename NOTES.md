@@ -621,3 +621,94 @@ public class Student {
     public Student() {
 }
 ```
+
+### One to Many Relationships
+
+Simply put, one-to-many mapping means that one row in a table is mapped to multiple rows in another table.
+
+![image](https://www.baeldung.com/wp-content/uploads/2017/02/C-1.png)
+
+One cart can have many items, so here we have a one-to-many mapping.
+
+```java
+public class Cart {
+
+    //...     
+ 
+    @OneToMany(mappedBy="cart")
+    private Set<Items> items;
+	
+    //...
+}
+```
+
+#### @OneToMany Annotation
+A one-to-many relationship between two entities is defined by using the @OneToMany annotation in Spring Data JPA. It declares the mappedBy element to indicate the entity that owns the bidirectional relationship. Usually, the child entity is one that owns the relationship and the parent entity contains the @OneToMany annotation.
+
+#### @ManyToOne Annotation
+The @ManyToOne annotation is used to define a many-to-one relationship between two entities in Spring Data JPA. The child entity, that has the join column, is called the owner of the relationship defined using the @ManyToOne annotation.
+
+#### @JoinColumn Annotation
+The @JoinColumn annotation is used to specify the foreign key column in the owner of the relationship. The inverse-side of the relationship sets the mappedBy attribute to indicate that the relationship is owned by the other entity.
+
+```java
+@Entity
+@Table(name = "books")
+public class Book implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+    private String author;
+    @Column(unique = true)
+    private String isbn;
+
+    @OneToMany(mappedBy = "book", fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL)
+    private Set<Page> pages;
+
+    public Book() {
+    }
+
+    public Book(String title, String author, String isbn) {
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+    }
+
+    // getters and setters, equals(), toString() .... (omitted for brevity)
+}
+
+@Entity
+@Table(name = "pages")
+public class Page implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private int number;
+    private String content;
+    private String chapter;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "book_id", nullable = false)
+    private Book book;
+
+    public Page() {
+    }
+
+    public Page(int number, String content, String chapter, Book book) {
+        this.number = number;
+        this.content = content;
+        this.chapter = chapter;
+        this.book = book;
+    }
+
+    // getters and setters, equals(), toString() .... (omitted for brevity)
+}
+```
+
+### Many to Many Relationships
