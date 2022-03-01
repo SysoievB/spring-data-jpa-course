@@ -712,3 +712,145 @@ public class Page implements Serializable {
 ```
 
 ### Many to Many Relationships
+
+- **Using Join table**
+
+![image](https://www.baeldung.com/wp-content/uploads/2018/11/simple-model-updated.png)
+
+Such a table is called a join table. In a join table, the combination of the foreign keys will be its composite primary key.
+
+```java
+@Entity
+class Student {
+
+    @Id
+    Long id;
+
+  @ManyToMany
+  @JoinTable(
+          name = "course_like",
+          joinColumns = @JoinColumn(name = "student_id"),
+          inverseJoinColumns = @JoinColumn(name = "course_id"))
+  Set<Course> likedCourses;
+
+    // additional properties
+    // standard constructors, getters, and setters
+}
+
+@Entity
+class Course {
+
+    @Id
+    Long id;
+
+  @ManyToMany(mappedBy = "likedCourses")
+  Set<Student> likes;
+
+    // additional properties
+    // standard constructors, getters, and setters
+}
+```
+
+- **Using a composite key**
+
+We can model it almost the same way as the simple many-to-many relationship. The only difference is that we attach a new attribute to the join table:
+
+![image](https://www.baeldung.com/wp-content/uploads/2018/11/relation-attribute-model-updated.png)
+
+Note that a composite key class has to fulfill some key requirements:
+
+- We have to mark it with @Embeddable.
+- It has to implement java.io.Serializable.
+- We need to provide an implementation of the hashcode() and equals() methods.
+- None of the fields can be an entity themselves.
+
+```java
+@Embeddable
+class CourseRatingKey implements Serializable {
+
+    @Column(name = "student_id")
+    Long studentId;
+
+    @Column(name = "course_id")
+    Long courseId;
+
+    // standard constructors, getters, and setters
+    // hashcode and equals implementation
+}
+@Entity
+class CourseRating {
+
+  @EmbeddedId
+  CourseRatingKey id;
+
+  @ManyToOne
+  @MapsId("studentId")
+  @JoinColumn(name = "student_id")
+  Student student;
+
+  @ManyToOne
+  @MapsId("courseId")
+  @JoinColumn(name = "course_id")
+  Course course;
+
+  int rating;
+
+  // standard constructors, getters, and setters
+}
+```
+
+This code is very similar to a regular entity implementation. However, we have some key differences:
+
+We used @EmbeddedId to mark the primary key, which is an instance of the CourseRatingKey class.
+We marked the student and course fields with @MapsId.
+@MapsId means that we tie those fields to a part of the key, and they're the foreign keys of a many-to-one relationship. We need it because, as we mentioned, we can't have entities in the composite key.
+
+- **With a new entity**
+
+![image](https://www.baeldung.com/wp-content/uploads/2018/11/relation-entity-model-updated.png)
+
+Since the course_registration became a regular table, we can create a plain old JPA entity modeling it:
+
+```java
+@Entity
+class CourseRegistration {
+
+    @Id
+    Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "student_id")
+    Student student;
+
+    @ManyToOne
+    @JoinColumn(name = "course_id")
+    Course course;
+
+    LocalDateTime registeredAt;
+
+    int grade;
+    
+    // additional properties
+    // standard constructors, getters, and setters
+}
+//We also need to configure the relationships in the Student and Course classes:
+class Student {
+
+    // ...
+
+    @OneToMany(mappedBy = "student")
+    Set<CourseRegistration> registrations;
+
+    // ...
+}
+
+class Course {
+
+    // ...
+
+    @OneToMany(mappedBy = "courses")
+    Set<CourseRegistration> registrations;
+
+    // ...
+}
+```
